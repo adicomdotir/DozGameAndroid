@@ -10,6 +10,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.ImageView;
 
+import java.util.ArrayList;
+
 /**
  * Created by adicom on 10/5/16.
  */
@@ -17,6 +19,8 @@ public class GameView extends ImageView {
 
     int[][] cells = new int[8][8];
     byte user = 1;
+    protected static final int[] DX = { -1,  0,  1, -1, 1, -1, 0, 1 };
+    protected static final int[] DY = { -1, -1, -1,  0, 0,  1, 1, 1 };
 
     public GameView(Context context) {
         super(context);
@@ -34,7 +38,10 @@ public class GameView extends ImageView {
     }
 
     private void init() {
-
+        cells[3][3] = 1;
+        cells[3][4] = 2;
+        cells[4][3] = 2;
+        cells[4][4] = 1;
     }
 
     @Override
@@ -89,12 +96,45 @@ public class GameView extends ImageView {
                 break;
             }
         }
-        if(user==1)
-            user=2;
-        else
-            user = 1;
-        cells[xIndex][yIndex] = user;
+        if(yIndex!=-1 && xIndex!=-1) {
+            if (cells[xIndex][yIndex] == 0) {
+
+                if (checkRow(xIndex, yIndex)) {
+                    cells[xIndex][yIndex] = user;
+                    user = (byte) ((user == 1) ? 2 : 1);
+                }
+            }
+        }
         invalidate();
         return super.onTouchEvent(event);
+    }
+
+    private boolean checkRow(int xIndex, int yIndex) {
+        for (int ii = 0; ii < DX.length; ii++) {
+            boolean sawOther = false;
+            int x = xIndex, y = yIndex;
+            for (int dd = 0; dd < 8; dd++) {
+                x += DX[ii];
+                y += DY[ii];
+
+                if (!inBounds(x, y)) break;
+                else if (user != cells[x][y] && cells[x][y] != 0) {
+                    sawOther = true;
+                } else if (sawOther && user == cells[x][y]) {
+                    while(x!=xIndex || y!=yIndex) {
+                        cells[x][y] = user;
+                        x -= DX[ii];
+                        y -= DY[ii];
+                        invalidate();
+                    }
+                    return true;
+                } else break;
+            }
+        }
+        return false;
+    }
+
+    private boolean inBounds(int x, int y) {
+        return (x >= 0) && (x < 8) && (y >= 0) && (y < 8);
     }
 }
